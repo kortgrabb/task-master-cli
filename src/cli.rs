@@ -6,17 +6,59 @@ pub enum Command {
     Add(String),
     Remove(usize),
     List(Option<String>),
+    Mark(usize, String),
     Help(),
 }
 
-// takes a slice of String values and returns a Command enum variant
 pub fn parse_command(args: &[String]) -> Command {
-    match args {
-        [command, query] if command == "list" => Command::List(Some(query.to_string())),
-        [command] if command == "list" => Command::List(None),
-        [command, task] if command == "add" => Command::Add(task.to_string()),
-        [command, index] if command == "remove" => Command::Remove(index.parse().expect("Error parsing index")),
-        [command] if command == "help" => Command::Help(),
+    if args.is_empty() {
+        println!("Invalid command line arguments");
+        print_usage();
+        std::process::exit(1);
+    }
+
+    match args[0].as_str() {
+        "list" => {
+            if let Some(query) = args.get(1) {
+                Command::List(Some(query.to_string()))
+            } else {
+                Command::List(None)
+            }
+        }
+        "add" => {
+            if let Some(task) = args.get(1) {
+                Command::Add(task.to_string())
+            } else {
+                println!("Invalid command line arguments");
+                print_usage();
+                std::process::exit(1);
+            }
+        }
+        "remove" => {
+            if let Some(index) = args.get(1) {
+                Command::Remove(index.parse().expect("Error parsing index"))
+            } else {
+                println!("Invalid command line arguments");
+                print_usage();
+                std::process::exit(1);
+            }
+        }
+        "mark" => {
+            if let Some(index) = args.get(1) {
+                if let Some(status) = args.get(2) {
+                    Command::Mark(index.parse().expect("Error parsing index"), status.to_string())
+                } else {
+                    println!("Invalid command line arguments");
+                    print_usage();
+                    std::process::exit(1);
+                }
+            } else {
+                println!("Invalid command line arguments");
+                print_usage();
+                std::process::exit(1);
+            }
+        }
+        "help" => Command::Help(),
         _ => {
             println!("Invalid command line arguments");
             print_usage();
@@ -25,7 +67,6 @@ pub fn parse_command(args: &[String]) -> Command {
     }
 }
 
-// takes a Command enum variant and prints a message to the console
 pub fn run_command(command: Command) {
     let mut tasks = TaskManager::new();
 
@@ -34,9 +75,11 @@ pub fn run_command(command: Command) {
         Command::Remove(index) => tasks.execute(TaskAction::RemoveTask(index)),
         Command::List(query) => tasks.execute(TaskAction::ListTasks(query)),
         Command::Help() => print_usage(),
+        Command::Mark(index, status) => tasks.execute(TaskAction::MarkTask(index, status)),
     }
 }
 
+// FUCKING OBVIOUS
 pub fn print_usage() {
     let mut commands = HashMap::new();
     commands.insert("add <task>", "Add a new task");

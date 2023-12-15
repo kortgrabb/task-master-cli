@@ -1,5 +1,5 @@
 
-use std::{fs::{File, OpenOptions}, path::Path, io::{self, Read, Write}};
+use std::{fs::OpenOptions, path::Path, io::{self, Read, Write}};
 
 use serde::{Deserialize, Serialize};
 
@@ -54,6 +54,11 @@ impl Storage {
         file.write_all(contents.as_bytes())?;
 
         Ok(())
+    }
+
+    pub fn update_tasks(&mut self) {
+        self.write_to_file(Path::new("./tasks.json"))
+            .expect("Error writing to file");
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
