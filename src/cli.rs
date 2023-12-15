@@ -6,7 +6,7 @@ pub enum Command {
     Add(String),
     Remove(usize),
     List(Option<String>),
-    Help(Option<String>),
+    Help(),
 }
 
 // takes a slice of String values and returns a Command enum variant
@@ -16,8 +16,7 @@ pub fn parse_command(args: &[String]) -> Command {
         [command] if command == "list" => Command::List(None),
         [command, task] if command == "add" => Command::Add(task.to_string()),
         [command, index] if command == "remove" => Command::Remove(index.parse().expect("Error parsing index")),
-        [command, query] if command == "help" => Command::Help(Some(query.to_string())),
-        [command] if command == "help" => Command::Help(None),
+        [command] if command == "help" => Command::Help(),
         _ => {
             println!("Invalid command line arguments");
             print_usage();
@@ -38,7 +37,7 @@ pub fn run_command(command: Command) {
         Command::List(query) => {
             Tasks::List(query);
         }
-        Command::Help(query) => {
+        Command::Help() => {
             print_usage();
         }
     }
