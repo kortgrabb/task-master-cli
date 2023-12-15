@@ -1,6 +1,4 @@
-mod cli;
-mod taskmanager;
-mod storage;
+use todo_cli::cli;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
