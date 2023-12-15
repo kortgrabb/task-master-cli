@@ -17,7 +17,7 @@ impl Storage {
         }
     }
 
-    pub fn read_from_file(file_path: &Path) -> io::Result<Storage> {
+    fn read_from_file(file_path: &Path) -> io::Result<Storage> {
         let mut file = File::open(file_path)?;
         let mut contents = String::new();
         
@@ -29,17 +29,21 @@ impl Storage {
         Ok(tasks)
     }
 
-    pub fn write_to_file(&self, file_path: &Path) -> io::Result<()> {
+    fn write_to_file(&self, file_path: &Path) -> io::Result<()> {
         let mut file = File::create(file_path)?;
         let contents = serde_json::to_string(&self)?;
         file.write_all(contents.as_bytes())?;
         Ok(())
     }
 
-    pub fn get_tasks(&self) -> &Vec<Task> {
-        &self.tasks
+    pub fn get_tasks(&self) -> Vec<Task> {
+        // use the read_from_file function to read the tasks from the file
+        let tasks = Storage::read_from_file(Path::new("./tasks.json"))
+            .expect("Error reading from file").tasks;
+        
+        tasks
     }
-    
+
     pub fn insert_task(&mut self, task: Task) {
         // add the task to the tasks vector
         self.tasks.push(task);

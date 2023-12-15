@@ -18,7 +18,6 @@ pub enum Status {
 }
 
 pub struct Tasks {
-    pub action: TaskAction,
     pub storage: Storage
 }
 
@@ -29,39 +28,42 @@ pub enum TaskAction {
 }
 
 impl Tasks {
-    pub fn new(action: TaskAction) -> Tasks {
+    pub fn new() -> Tasks {
         let storage = storage::Storage::new();
         Tasks {
-            action,
             storage,
         }
     }
 
-    pub fn execute(&mut self) {
-        match &self.action {
-            TaskAction::AddTask(task) => {
-                let new_task = Task {
-                    description: task.clone(),
+    pub fn execute(&mut self, action: TaskAction) {
+        match action {
+            TaskAction::AddTask(description) => {
+                let task = Task {
+                    description,
                     status: Status::Todo,
                     tags: Vec::new(),
                 };
-                self.storage.insert_task(new_task);
-            }
+                
+                self.storage.insert_task(task);
+            },
             TaskAction::RemoveTask(index) => {
-                self.storage.remove_task(index);
-            }
+                self.storage.remove_task(&index);
+            },
             TaskAction::ListTasks(query) => {
                 let tasks = self.storage.get_tasks();
-
-                for (index, task) in tasks.iter().enumerate() {
-                    match query {
-                        Some(query) => {
-                            if task.description.contains(query) {
-                                println!("{}: {}", index, task.description);
-                            }
+                match query {
+                    Some(query) => {
+                        let filtered_tasks = tasks
+                            .iter()
+                            .filter(|task| task.description.contains(&query))
+                            .collect::<Vec<&Task>>();
+                        for task in filtered_tasks {
+                            println!("{}", task.description);
                         }
-                        None => {
-                            println!("{}: {}", index, task.description);
+                    },
+                    None => {
+                        for task in tasks {
+                            println!("{}", task.description);
                         }
                     }
                 }

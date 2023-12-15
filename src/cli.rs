@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::tasks::Tasks;
+use crate::tasks::{Tasks, TaskAction};
 
 pub enum Command {
     Add(String),
@@ -27,19 +27,13 @@ pub fn parse_command(args: &[String]) -> Command {
 
 // takes a Command enum variant and prints a message to the console
 pub fn run_command(command: Command) {
+    let mut tasks = Tasks::new();
+
     match command {
-        Command::Add(task) => {
-      
-        }
-        Command::Remove(index) => {
-
-        }
-        Command::List(query) => {
-
-        }
-        Command::Help() => {
-            print_usage();
-        }
+        Command::Add(task) => tasks.execute(TaskAction::AddTask(task)),
+        Command::Remove(index) => tasks.execute(TaskAction::RemoveTask(index)),
+        Command::List(query) => tasks.execute(TaskAction::ListTasks(query)),
+        Command::Help() => print_usage(),
     }
 }
 
