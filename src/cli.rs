@@ -4,7 +4,7 @@ use crate::taskmanager::{TaskManager, TaskAction};
 
 pub enum Command {
     Add(String),
-    Remove(usize),
+    Remove(String),
     List(Option<String>),
     Mark(usize, String),
     Help(),
@@ -26,17 +26,13 @@ pub fn parse_command(args: &[String]) -> Command {
             }
         }
         "add" => {
-            if let Some(task) = args.get(1) {
-                Command::Add(task.to_string())
-            } else {
-                println!("Invalid command line arguments");
-                print_usage();
-                std::process::exit(1);
-            }
+            // turn all arguments after the first one into a single string
+            let task = args[1..].join(" ");
+            Command::Add(task)
         }
         "remove" => {
             if let Some(index) = args.get(1) {
-                Command::Remove(index.parse().expect("Error parsing index"))
+                Command::Remove(index.to_string())
             } else {
                 println!("Invalid command line arguments");
                 print_usage();

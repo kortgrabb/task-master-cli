@@ -3,7 +3,7 @@ use std::{fs::OpenOptions, path::Path, io::{self, Read, Write}};
 
 use serde::{Deserialize, Serialize};
 
-use crate::taskmanager::Task;
+use crate::taskmanager::{Task, TaskManager};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Storage {
@@ -22,19 +22,19 @@ impl Storage {
     }
 
     fn read_from_file(file_path: &Path) -> io::Result<Storage> {
-        // open the file
         let mut file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .open(file_path)?;
 
-        // read the contents of the file into a string
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
 
-        // deserialize the string into a Storage struct
-        let tasks: Storage = serde_json::from_str(&contents)?;
+        let tasks = match serde_json::from_str(&contents) {
+            Ok(storage) => storage,
+            Err(_) => Storage { tasks: Vec::new() },
+        };
 
         Ok(tasks)
     }
@@ -57,6 +57,12 @@ impl Storage {
     }
 
     pub fn update_tasks(&mut self) {
+
+        // fix the ids of the tasks
+        for (index, task) in self.tasks.iter_mut().enumerate() {
+            task.id = index;
+        }
+
         self.write_to_file(Path::new("./tasks.json"))
             .expect("Error writing to file");
     }
