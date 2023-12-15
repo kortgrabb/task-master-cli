@@ -3,7 +3,7 @@ use std::{fs::OpenOptions, path::Path, io::{self, Read, Write}};
 
 use serde::{Deserialize, Serialize};
 
-use crate::taskmanager::{Task, TaskManager};
+use crate::taskmanager::Task;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Storage {

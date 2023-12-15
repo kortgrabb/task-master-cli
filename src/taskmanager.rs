@@ -62,8 +62,10 @@ impl TaskManager {
                     return;
                 }
 
-                let tags: Vec<&str> = description.split_whitespace()
-                    .filter(|word| word.starts_with('@')).collect();
+                let tags: Vec<String> = description
+                    .split_whitespace()
+                    .filter(|word| word.starts_with("@"))
+                    .map(|word| word.to_string()).collect();
 
                 let task = Task {
                     id: self.storage.tasks.len(),
@@ -71,7 +73,7 @@ impl TaskManager {
                     // date in the format of Month Day, Year, Hour:Minute AM/PM
                     date: chrono::Local::now().format("%B %d, %Y, %I:%M %p").to_string(),
                     status: Status::Todo,
-                    tags: Vec::new(),
+                    tags: tags,
                 };
 
                 self.storage.insert_task(task);
@@ -103,7 +105,7 @@ impl TaskManager {
             TaskAction::ListTasks(query) => {
                 let tasks = self.storage.get_tasks();
 
-                if (tasks.len() == 0) {
+                if tasks.len() == 0 {
                     println!("No tasks were found. You can add a task with the command: todo add \"task description\"");
                     return;
                 }
