@@ -1,46 +1,67 @@
 
-use std::{fs::File, path::Path, io::{self, Read, Write}};
+use std::{fs::{File, OpenOptions}, path::Path, io::{self, Read, Write}};
 
 use serde::{Deserialize, Serialize};
 
-use crate::tasks::Task;
+use crate::taskmanager::Task;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Storage {
     pub tasks: Vec<Task>,
 }
 
 impl Storage {
     pub fn new() -> Storage {
-        Storage {
-            tasks: Vec::new(),
-        }
+        // load the tasks from the file if it exists
+        let tasks = match Storage::read_from_file(Path::new("./tasks.json")) {
+            Ok(storage) => storage.tasks,
+            Err(_) => Vec::new(),
+        };
+
+        Storage { tasks }
     }
 
     fn read_from_file(file_path: &Path) -> io::Result<Storage> {
-        let mut file = File::open(file_path)?;
+        // open the file
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(file_path)?;
+
+        // read the contents of the file into a string
         let mut contents = String::new();
-        
-        // read the file contents into the contents variable
         file.read_to_string(&mut contents)?;
-        
-        // deserialize the contents into a Storage struct
+
+        // deserialize the string into a Storage struct
         let tasks: Storage = serde_json::from_str(&contents)?;
+
         Ok(tasks)
     }
 
     fn write_to_file(&self, file_path: &Path) -> io::Result<()> {
-        let mut file = File::create(file_path)?;
+        // open the file
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(file_path)?;
+
+        // serialize the Storage struct into a string
         let contents = serde_json::to_string(&self)?;
+
+        // overwrite the existing file with the new contents
+        file.set_len(0)?;
         file.write_all(contents.as_bytes())?;
+
         Ok(())
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
+
         // use the read_from_file function to read the tasks from the file
         let tasks = Storage::read_from_file(Path::new("./tasks.json"))
             .expect("Error reading from file").tasks;
-        
+
         tasks
     }
 
@@ -54,8 +75,10 @@ impl Storage {
     }
 
     pub fn remove_task(&mut self, index: &usize) {
-        // remove the task from the tasks vector
+        // remove the task at the given index
         self.tasks.remove(*index);
+
+        println!("Task {} removed", index);
 
         // write the updated tasks to the file
         self.write_to_file(Path::new("./tasks.json"))

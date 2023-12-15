@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::tasks::{Tasks, TaskAction};
+use crate::taskmanager::{TaskManager, TaskAction};
 
 pub enum Command {
     Add(String),
@@ -27,7 +27,7 @@ pub fn parse_command(args: &[String]) -> Command {
 
 // takes a Command enum variant and prints a message to the console
 pub fn run_command(command: Command) {
-    let mut tasks = Tasks::new();
+    let mut tasks = TaskManager::new();
 
     match command {
         Command::Add(task) => tasks.execute(TaskAction::AddTask(task)),
