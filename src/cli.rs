@@ -29,13 +29,13 @@ pub fn parse_command(args: &[String]) -> Command {
 pub fn run_command(command: Command) {
     match command {
         Command::Add(task) => {
-            Tasks::Insert(task);
+      
         }
         Command::Remove(index) => {
-            Tasks::Remove(index);
+
         }
         Command::List(query) => {
-            Tasks::List(query);
+
         }
         Command::Help() => {
             print_usage();
