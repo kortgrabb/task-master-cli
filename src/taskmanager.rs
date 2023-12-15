@@ -55,8 +55,16 @@ impl TaskManager {
 
     pub fn execute(&mut self, action: TaskAction) {
         match action {
-            // add a new task to the storage
             TaskAction::AddTask(description) => {
+
+                if description.len() == 0 {
+                    println!("You must provide a description for the task");
+                    return;
+                }
+
+                let tags: Vec<&str> = description.split_whitespace()
+                    .filter(|word| word.starts_with('@')).collect();
+
                 let task = Task {
                     id: self.storage.tasks.len(),
                     description,
@@ -72,8 +80,7 @@ impl TaskManager {
             },
 
             TaskAction::RemoveTask(index) => {
-
-                // if a - is passed between two numbers, remove all tasks between those numbers
+                // if the index contains "..", then it is a range of tasks to delete
                 let num_tasks_deleted = if index.contains("..") {
                     let indices: Vec<usize> = index.split("..").map(|index| index.parse().unwrap()).collect();
 
@@ -109,14 +116,15 @@ impl TaskManager {
                             .filter(|task| task.description.contains(&query))
                             .collect::<Vec<&Task>>();
                         for task in filtered_tasks {
-                            println!("{}: {}\n{}: {}\n{}: {}\n{}: {}\n----------------------", 
+                            println!("{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}\n----------------------", 
                                 "Task ID", task.id, 
                                 "Status".bright_blue(), &task.status.to_string().on_color(match &task.status {
                                     Status::Complete => "green",
                                     Status::Todo => "red",
                                     Status::Working => "yellow",
                                 }).black(), 
-                                "Description".bright_blue(), &task.description, 
+                                "Description".bright_blue(), &task.description,
+                                "Tags".bright_blue(), &task.tags.join(", "),
                                 "Written".bright_blue(), &task.date);
                         }
                     },
