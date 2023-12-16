@@ -1,4 +1,3 @@
-
 use std::{fs::OpenOptions, path::Path, io::{self, Read, Write}};
 
 use serde::{Deserialize, Serialize};
@@ -22,6 +21,23 @@ impl Storage {
         };
 
         Storage { tasks }
+    }
+
+    pub fn load_tasks(&mut self) {
+        // load the tasks from the file if it exists
+        self.tasks = match Storage::read_from_file(Path::new(FILE_PATH)) {
+            Ok(storage) => storage.tasks,
+            Err(_) => Vec::new(),
+        };
+    }
+
+    pub fn task_exists(&self, index: &usize) -> bool {
+        // check if the task exists
+        if self.tasks.len() > *index {
+            true
+        } else {
+            false
+        }
     }
 
     fn read_from_file(file_path: &Path) -> io::Result<Storage> {
@@ -78,6 +94,13 @@ impl Storage {
             .expect("Error reading from file").tasks;
 
         tasks
+    }
+
+    pub fn get_task_at(&self, index: &usize) -> Task {
+        // get the task at the given index
+        let task = self.tasks[*index].clone();
+        
+        task
     }
 
     pub fn insert_task(&mut self, task: Task) {

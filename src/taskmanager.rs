@@ -18,17 +18,17 @@ pub struct Task {
 
 pub enum Status {
     Todo,
-    Working,
-    Complete,
+    WIP,
+    Done,
 }
 
 // allows the status variants to be used in println!
 impl fmt::Display for Status {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Status::Todo => write!(f, "Todo"),
-            Status::Working => write!(f, "Doing"),
-            Status::Complete => write!(f, "Completed"),
+            Status::WIP => write!(f, "WIP"),
+            Status::Done => write!(f, "Completed"),
         }
     }
     
@@ -44,6 +44,7 @@ pub enum TaskAction {
     ListTasks(Option<String>),
     MarkTask(usize, String),
     EditTask(usize, String),
+    View(usize),
 }
 
 impl TaskManager {
@@ -78,16 +79,19 @@ impl TaskManager {
 
                 let task = Task {
                     id: self.storage.tasks.len(),
-                    description,
+                    description: description.clone(),
+
                     // date in the format of Month Day, Year, Hour:Minute AM/PM
                     date: chrono::Local::now().format("%B %d, %Y, %I:%M %p").to_string(),
                     status: Status::Todo,
-                    tags: tags
+                    tags: tags.clone()
                 };
 
                 self.storage.insert_task(task);
 
-                println!("Task added successfully!")
+                println!("Task was created with the following information:");   
+                println!("Description: {}", description);
+                println!("Tags: {}", tags.join(", "));
             },
 
             TaskAction::RemoveTask(index) => {
@@ -97,9 +101,7 @@ impl TaskManager {
 
                     let mut num_tasks_deleted = 0;
                     for index in indices[0]..indices[1] + 1 {
-                        let task_exists = self.storage.tasks.iter().any(|task| task.id == index);
-
-                        if task_exists {
+                        if self.storage.task_exists(&index) {
                             self.storage.tasks.retain(|task| task.id != index);
                             num_tasks_deleted += 1;
                         }
@@ -116,9 +118,9 @@ impl TaskManager {
             },
 
             TaskAction::ListTasks(query) => {
-                let tasks = self.storage.get_tasks();
+                self.storage.load_tasks();
 
-                if tasks.len() == 0 {
+                if self.storage.tasks.len() == 0 {
                     println!("No tasks were found. You can add a task with the command: todo add \"task description\"");
                     return;
                 }
@@ -126,7 +128,7 @@ impl TaskManager {
                 match query {
                     // if there is a query, filter the tasks by the query
                     Some(query) => {
-                        let filtered_tasks = tasks
+                        let filtered_tasks = self.storage.tasks
                             .iter()
                             .filter(|task| task.description.contains(&query))
                             .collect::<Vec<&Task>>();
@@ -137,23 +139,19 @@ impl TaskManager {
                                 Cell::new("Task ID"),
                                 Cell::new("Status"),
                                 Cell::new("Description"),
-                                // Cell::new("Tags"),
-                                // Cell::new("Written"),
                             ]));
 
                         for task in filtered_tasks {
                             let status = match &task.status {
-                                Status::Complete => "Complete".green().to_string(),
+                                Status::Done => "Complete".green().to_string(),
                                 Status::Todo => "Todo".red().to_string(),
-                                Status::Working => "Working".yellow().to_string(),
+                                Status::WIP => "Working".yellow().to_string(),
                             };
                         
                             table.add_row(Row::new(vec![
                                 Cell::new(&task.id.to_string()),
                                 Cell::new(&status),
                                 Cell::new(&task.description),
-                                // Cell::new(&task.tags.join(", ")),
-                                // Cell::new(&task.date.to_string()),
                             ]));
                         }
 
@@ -172,11 +170,11 @@ impl TaskManager {
                             // Cell::new("Written"),
                         ]));
                         
-                        for task in tasks {
+                        for task in &self.storage.tasks {
                             let status = match &task.status {
-                                Status::Complete => "Complete".green().to_string(),
+                                Status::Done => "Complete".green().to_string(),
                                 Status::Todo => "Todo".red().to_string(),
-                                Status::Working => "Working".yellow().to_string(),
+                                Status::WIP => "Working".yellow().to_string(),
                             };
                         
                             table.add_row(Row::new(vec![
@@ -195,9 +193,7 @@ impl TaskManager {
 
             TaskAction::MarkTask(index, status) => {
                 
-                let task_exists = self.storage.tasks.iter().any(|task| task.id == index);
-
-                if !task_exists {
+                if !self.storage.task_exists(&index) {
                     println!("Task with ID {} does not exist", index);
                     return;
                 }
@@ -205,11 +201,11 @@ impl TaskManager {
                 // see if the status is valid
                 let status = match status.as_str() {
                     "todo" | "t" => Status::Todo,
-                    "doing" | "d" => Status::Working,
-                    "complete" | "c" => Status::Complete,
+                    "wip" | "w" => Status::WIP,
+                    "done" | "d" => Status::Done,
                     _ => {
                         println!("Invalid status: {}", status);
-                        println!("Valid statuses are (t)odo, (d)oing, and (c)omplete");
+                        println!("Valid statuses are: (todo, t), (wip, w), (done, d)");
                         return;
                     }
                 };
@@ -227,9 +223,7 @@ impl TaskManager {
             }
 
             TaskAction::EditTask(index, description) => {
-                let task_exists = self.storage.tasks.iter().any(|task| task.id == index);
-
-                if !task_exists {
+                if !self.storage.task_exists(&index) {
                     println!("Task with ID {} does not exist", index);
                     return;
                 }
@@ -243,7 +237,41 @@ impl TaskManager {
 
                 self.storage.update_tasks();
                 
-                println!("Task with ID {} has been edited to {}", index, description);
+                println!("The description of Task with ID {} has been updated to {}", index, description);
+            }
+
+            TaskAction::View(index) => {
+                if !self.storage.task_exists(&index) {
+                    println!("Task with ID {} does not exist", index);
+                }
+
+                let task = self.storage.get_task_at(&index);
+
+                let status = match &task.status {
+                    Status::Done => "Complete".green().to_string(),
+                    Status::Todo => "Todo".red().to_string(),
+                    Status::WIP => "Working".yellow().to_string(),
+                };
+
+                let mut table = Table::new();
+                table.set_format(*format::consts::FORMAT_BOX_CHARS);
+                table.set_titles(Row::new(vec![
+                    Cell::new("Task ID"),
+                    Cell::new("Status"),
+                    Cell::new("Description"),
+                    Cell::new("Tags"),
+                    Cell::new("Written"),
+                ]));
+
+                table.add_row(Row::new(vec![
+                    Cell::new(&task.id.to_string()),
+                    Cell::new(&status),
+                    Cell::new(&task.description),
+                    Cell::new(&task.tags.join(", ")),
+                    Cell::new(&task.date.to_string()),
+                ]));
+
+                table.printstd();
             }
         }
     }

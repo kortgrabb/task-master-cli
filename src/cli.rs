@@ -8,7 +8,14 @@ pub enum Command {
     List(Option<String>),
     Mark(usize, String),
     Edit(usize, String),
+    View(usize),
     Help(),
+}
+
+fn handle_invalid_args() -> ! {
+    println!("Invalid command line arguments");
+    print_usage();
+    std::process::exit(1);
 }
 
 pub fn parse_command(args: &[String]) -> Command {
@@ -18,73 +25,53 @@ pub fn parse_command(args: &[String]) -> Command {
         std::process::exit(1);
     }
 
-    // match the first argument to a command
     match args[0].as_str() {
         "list" => {
-            if let Some(query) = args.get(1) {
-                Command::List(Some(query.to_string()))
-            } else {
-                Command::List(None)
-            }
+            let query = args.get(1).map(|s| s.to_string());
+            Command::List(query)
         }
         "add" => {
-            if let Some(task) = args.get(1) {
-                if let Some(tags) = args.get(2) {
-                    Command::Add(task.to_string(), Some(tags.to_string()))
-                } else {
-                    Command::Add(task.to_string(), None)
-                }
-            } else {
-                println!("Invalid command line arguments");
-                print_usage();
-                std::process::exit(1);
+            let task = args.get(1).map(|s| s.to_string());
+            let tags = args.get(2).map(|s| s.to_string());
+            match task {
+                Some(task) => Command::Add(task, tags),
+                None => handle_invalid_args(),
             }
         }
         "remove" => {
-            if let Some(index) = args.get(1) {
-                Command::Remove(index.to_string())
-            } else {
-                println!("Invalid command line arguments");
-                print_usage();
-                std::process::exit(1);
+            let index = args.get(1).map(|s| s.to_string());
+            match index {
+                Some(index) => Command::Remove(index),
+                None => handle_invalid_args(),
             }
         }
         "mark" => {
-            if let Some(index) = args.get(1) {
-                if let Some(status) = args.get(2) {
-                    Command::Mark(index.parse().expect("Error parsing index"), status.to_string())
-                } else {
-                    println!("Invalid command line arguments");
-                    print_usage();
-                    std::process::exit(1);
-                }
-            } else {
-                println!("Invalid command line arguments");
-                print_usage();
-                std::process::exit(1);
+            let index = args.get(1).and_then(|s| s.parse().ok());
+            let status = args.get(2).map(|s| s.to_string());
+            match (index, status) {
+                (Some(index), Some(status)) => Command::Mark(index, status),
+                _ => handle_invalid_args(),
             }
         }
-        "help" => Command::Help(),
         "edit" => {
-            if let Some(index) = args.get(1) {
-                if let Some(description) = args.get(2) {
-                    Command::Edit(index.parse().expect("Error parsing index"), description.to_string())
-                } else {
-                    println!("Invalid command line arguments");
-                    print_usage();
-                    std::process::exit(1);
-                }
-            } else {
-                println!("Invalid command line arguments");
-                print_usage();
-                std::process::exit(1);
+            let index = args.get(1).and_then(|s| s.parse().ok());
+            let description = args.get(2).map(|s| s.to_string());
+            match (index, description) {
+                (Some(index), Some(description)) => Command::Edit(index, description),
+                _ => handle_invalid_args(),
             }
         }
-        _ => {
-            println!("Invalid command line arguments");
-            print_usage();
-            std::process::exit(1);
+
+        "view" => {
+            let index = args.get(1).and_then(|s| s.parse().ok());
+            match index {
+                Some(index) => Command::View(index),
+                None => handle_invalid_args(),
+            }
         }
+
+        "help" => Command::Help(),
+        _ => handle_invalid_args(),
     }
 }
 
@@ -98,6 +85,7 @@ pub fn run_command(command: Command) {
         Command::Help() => print_usage(),
         Command::Mark(index, status) => tasks.execute(TaskAction::MarkTask(index, status)),
         Command::Edit(index, description) => tasks.execute(TaskAction::EditTask(index, description)),
+        Command::View(index) => tasks.execute(TaskAction::View(index)),
     }
 }
 
