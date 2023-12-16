@@ -77,13 +77,13 @@ This command usage guide provides a clear understanding of how to interact with 
 To build this project, you need to have Rust installed. Use the following command:
 
 ```sh
-cargo build
+cargo build --release
 ```
 
 This will create an executable file in the `target/debug` directory. Run the application with:
 
 ```sh
-cargo run
+cargo run -- [arguments]
 ```
 
 ## Dependencies
