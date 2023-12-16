@@ -3,6 +3,7 @@ use core::fmt;
 use serde::{Serialize, Deserialize};
 use crate::storage::{self, Storage};
 use colored::*;
+use prettytable::{Table, Row, Cell, format};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Task {
@@ -93,8 +94,12 @@ impl TaskManager {
 
                     let mut num_tasks_deleted = 0;
                     for index in indices[0]..indices[1] + 1 {
-                        self.storage.tasks.retain(|task| task.id != index);
-                        num_tasks_deleted += 1;
+                        let task_exists = self.storage.tasks.iter().any(|task| task.id == index);
+
+                        if task_exists {
+                            self.storage.tasks.retain(|task| task.id != index);
+                            num_tasks_deleted += 1;
+                        }
                     }
                     num_tasks_deleted
                 } else {
@@ -138,18 +143,33 @@ impl TaskManager {
 
                     // if there is no query, print all tasks
                     None => {
+                        let mut table = Table::new();
+                        table.set_format(*format::consts::FORMAT_BOX_CHARS);
+                        table.set_titles(Row::new(vec![
+                            Cell::new("Task ID"),
+                            Cell::new("Status"),
+                            Cell::new("Description"),
+                            Cell::new("Tags"),
+                            Cell::new("Written"),
+                        ]));
+                        
                         for task in tasks {
-                            println!("{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}\n----------------------", 
-                                "Task ID", task.id, 
-                                "Status".bright_blue(), &task.status.to_string().on_color(match &task.status {
-                                    Status::Complete => "green",
-                                    Status::Todo => "red",
-                                    Status::Working => "yellow",
-                                }).black(), 
-                                "Description".bright_blue(), &task.description,
-                                "Tags".bright_blue(), &task.tags.join(", "),
-                                "Written".bright_blue(), &task.date);
+                            let status = match &task.status {
+                                Status::Complete => "Complete".green().to_string(),
+                                Status::Todo => "Todo".red().to_string(),
+                                Status::Working => "Working".yellow().to_string(),
+                            };
+                        
+                            table.add_row(Row::new(vec![
+                                Cell::new(&task.id.to_string()),
+                                Cell::new(&status),
+                                Cell::new(&task.description),
+                                Cell::new(&task.tags.join(", ")),
+                                Cell::new(&task.date.to_string()),
+                            ]));
                         }
+                        
+                        table.printstd();
                     }
                 }
             }

@@ -10,10 +10,13 @@ pub struct Storage {
     pub tasks: Vec<Task>,
 }
 
+// constant for the file path (inside data folder)
+const FILE_PATH: &str = "tasks.ef";
+
 impl Storage {
     pub fn new() -> Storage {
         // load the tasks from the file if it exists
-        let tasks = match Storage::read_from_file(Path::new("./tasks.json")) {
+        let tasks = match Storage::read_from_file(Path::new(FILE_PATH)) {
             Ok(storage) => storage.tasks,
             Err(_) => Vec::new(),
         };
@@ -29,7 +32,8 @@ impl Storage {
             .open(file_path)?;
 
         let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
+        file.read_to_string(&mut contents)
+            .expect("Error reading from file");
 
         let tasks = match serde_json::from_str(&contents) {
             Ok(storage) => storage,
@@ -40,7 +44,6 @@ impl Storage {
     }
 
     fn write_to_file(&self, file_path: &Path) -> io::Result<()> {
-        // open the file
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
@@ -48,10 +51,11 @@ impl Storage {
 
         // serialize the Storage struct into a string
         let contents = serde_json::to_string(&self)?;
-
-        // overwrite the existing file with the new contents
-        file.set_len(0)?;
-        file.write_all(contents.as_bytes())?;
+        
+        file.set_len(0)
+            .expect("Error truncating file");
+        file.write_all(contents.as_bytes())
+            .expect("Error writing to file");
 
         Ok(())
     }
@@ -63,14 +67,14 @@ impl Storage {
             task.id = index;
         }
 
-        self.write_to_file(Path::new("./tasks.json"))
+        self.write_to_file(Path::new(FILE_PATH))
             .expect("Error writing to file");
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
 
         // use the read_from_file function to read the tasks from the file
-        let tasks = Storage::read_from_file(Path::new("./tasks.json"))
+        let tasks = Storage::read_from_file(Path::new(FILE_PATH))
             .expect("Error reading from file").tasks;
 
         tasks
@@ -81,7 +85,7 @@ impl Storage {
         self.tasks.push(task);
 
         // write the updated tasks to the file
-        self.write_to_file(Path::new("./tasks.json"))
+        self.write_to_file(Path::new(FILE_PATH))
             .expect("Error writing to file");
     }
 
@@ -92,7 +96,7 @@ impl Storage {
         println!("Task {} removed", index);
 
         // write the updated tasks to the file
-        self.write_to_file(Path::new("./tasks.json"))
+        self.write_to_file(Path::new(FILE_PATH))
             .expect("Error writing to file");
     }
 }

@@ -18,6 +18,7 @@ pub fn parse_command(args: &[String]) -> Command {
         std::process::exit(1);
     }
 
+    // match the first argument to a command
     match args[0].as_str() {
         "list" => {
             if let Some(query) = args.get(1) {
@@ -89,7 +90,7 @@ pub fn parse_command(args: &[String]) -> Command {
 
 pub fn run_command(command: Command) {
     let mut tasks = TaskManager::new();
-
+    
     match command {
         Command::Add(task, tags) => tasks.execute(TaskAction::AddTask(task, tags)),
         Command::Remove(index) => tasks.execute(TaskAction::RemoveTask(index)),
