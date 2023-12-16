@@ -38,7 +38,7 @@ pub struct TaskManager {
 }
 
 pub enum TaskAction {
-    AddTask(String),
+    AddTask(String, Option<String>),
     RemoveTask(String),
     ListTasks(Option<String>),
     MarkTask(usize, String),
@@ -55,17 +55,22 @@ impl TaskManager {
 
     pub fn execute(&mut self, action: TaskAction) {
         match action {
-            TaskAction::AddTask(description) => {
+            TaskAction::AddTask(description, tags) => {
 
                 if description.len() == 0 {
                     println!("You must provide a description for the task");
                     return;
                 }
 
-                let tags: Vec<String> = description
-                    .split_whitespace()
-                    .filter(|word| word.starts_with("@"))
-                    .map(|word| word.to_string()).collect();
+                // if there are tags, split them into a vector
+                let mut tags = match tags {
+                    Some(tags) => tags.split(",").map(|tag| tag.trim().to_string()).collect(),
+                    None => Vec::new(),
+                };
+
+                if tags.len() == 0 {
+                    tags.push("No Tags".to_string());
+                }
 
                 let task = Task {
                     id: self.storage.tasks.len(),
@@ -73,7 +78,7 @@ impl TaskManager {
                     // date in the format of Month Day, Year, Hour:Minute AM/PM
                     date: chrono::Local::now().format("%B %d, %Y, %I:%M %p").to_string(),
                     status: Status::Todo,
-                    tags: tags,
+                    tags: tags
                 };
 
                 self.storage.insert_task(task);
@@ -134,14 +139,15 @@ impl TaskManager {
                     // if there is no query, print all tasks
                     None => {
                         for task in tasks {
-                            println!("{}: {}\n{}: {}\n{}: {}\n{}: {}\n----------------------", 
+                            println!("{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}\n----------------------", 
                                 "Task ID", task.id, 
                                 "Status".bright_blue(), &task.status.to_string().on_color(match &task.status {
                                     Status::Complete => "green",
                                     Status::Todo => "red",
                                     Status::Working => "yellow",
                                 }).black(), 
-                                "Description".bright_blue(), &task.description, 
+                                "Description".bright_blue(), &task.description,
+                                "Tags".bright_blue(), &task.tags.join(", "),
                                 "Written".bright_blue(), &task.date);
                         }
                     }
@@ -149,6 +155,7 @@ impl TaskManager {
             }
 
             TaskAction::MarkTask(index, status) => {
+                
                 let task_exists = self.storage.tasks.iter().any(|task| task.id == index);
 
                 if !task_exists {
@@ -179,8 +186,25 @@ impl TaskManager {
                 
                 println!("Task with ID {} has been marked as {}", index, status);
             }
-            TaskAction::EditTask(_, _) => {
-                println!("Edit task");
+
+            TaskAction::EditTask(index, description) => {
+                let task_exists = self.storage.tasks.iter().any(|task| task.id == index);
+
+                if !task_exists {
+                    println!("Task with ID {} does not exist", index);
+                    return;
+                }
+
+                // update the task
+                self.storage.tasks.iter_mut().for_each(|task| {
+                    if task.id == index {
+                        task.description = description.clone();
+                    }
+                });
+
+                self.storage.update_tasks();
+                
+                println!("Task with ID {} has been edited to {}", index, description);
             }
         }
     }
