@@ -10,7 +10,7 @@ pub struct Storage {
 }
 
 // constant for the file path (inside data folder)
-const FILE_PATH: &str = "tasks.ef";
+const FILE_PATH: &str = "./tasks.json";
 
 impl Storage {
     pub fn new() -> Storage {
