@@ -34,6 +34,7 @@ impl fmt::Display for Status {
     
 }
 
+
 pub struct TaskManager {
     pub storage: Storage
 }
@@ -47,6 +48,34 @@ pub enum TaskAction {
     View(usize),
 }
 
+
+fn print_tasks(tasks: Vec<&Task>) {
+    let mut table = Table::new();
+    table.set_format(*format::consts::FORMAT_BOX_CHARS);
+    table.set_titles(Row::new(vec![
+        Cell::new("Task ID"),
+        Cell::new("Status"),
+        Cell::new("Description"),
+    ]));
+
+    for task in tasks.clone() {
+        let status = match &task.status {
+            Status::Done => "Complete".green().to_string(),
+            Status::Todo => "Todo".red().to_string(),
+            Status::WIP => "Working".yellow().to_string(),
+        };
+
+        table.add_row(Row::new(vec![
+            Cell::new(&task.id.to_string()),
+            Cell::new(&status),
+            Cell::new(&task.description),
+        ]));
+    }
+
+    table.printstd();
+    println!("{} tasks found", tasks.len());
+}
+
 impl TaskManager {
     pub fn new() -> TaskManager {
         let storage = storage::Storage::new();
@@ -56,6 +85,7 @@ impl TaskManager {
     }
 
     pub fn execute(&mut self, action: TaskAction) {
+
         match action {
             TaskAction::AddTask(description, tags) => {
 
@@ -121,72 +151,32 @@ impl TaskManager {
                 self.storage.load_tasks();
 
                 if self.storage.tasks.len() == 0 {
-                    println!("No tasks were found. You can add a task with the command: todo add \"task description\"");
+                    println!("No tasks were found.");
                     return;
                 }
 
                 match query {
                     // if there is a query, filter the tasks by the query
                     Some(query) => {
-                        let filtered_tasks = self.storage.tasks
+
+                        let filtered_tasks: Vec<&Task> = if query.starts_with('@') {
+                            self.storage.tasks
+                            .iter()
+                            .filter(|task| task.tags.contains(&query.trim_start_matches('@').to_string()))
+                            .collect()
+                        } else {
+                            self.storage.tasks
                             .iter()
                             .filter(|task| task.description.contains(&query))
-                            .collect::<Vec<&Task>>();
+                            .collect()
+                        };
 
-                        let mut table = Table::new();
-                        table.set_format(*format::consts::FORMAT_BOX_CHARS);
-                        table.set_titles(Row::new(vec![
-                                Cell::new("Task ID"),
-                                Cell::new("Status"),
-                                Cell::new("Description"),
-                            ]));
-
-                        for task in filtered_tasks {
-                            let status = match &task.status {
-                                Status::Done => "Complete".green().to_string(),
-                                Status::Todo => "Todo".red().to_string(),
-                                Status::WIP => "Working".yellow().to_string(),
-                            };
-                        
-                            table.add_row(Row::new(vec![
-                                Cell::new(&task.id.to_string()),
-                                Cell::new(&status),
-                                Cell::new(&task.description),
-                            ]));
-                        }
-
-                        table.printstd();
+                        print_tasks(filtered_tasks);
                     },
 
                     // if there is no query, print all tasks
                     None => {
-                        let mut table = Table::new();
-                        table.set_format(*format::consts::FORMAT_BOX_CHARS);
-                        table.set_titles(Row::new(vec![
-                            Cell::new("Task ID"),
-                            Cell::new("Status"),
-                            Cell::new("Description"),
-                            // Cell::new("Tags"),
-                            // Cell::new("Written"),
-                        ]));
-                        
-                        for task in &self.storage.tasks {
-                            let status = match &task.status {
-                                Status::Done => "Complete".green().to_string(),
-                                Status::Todo => "Todo".red().to_string(),
-                                Status::WIP => "Working".yellow().to_string(),
-                            };
-                        
-                            table.add_row(Row::new(vec![
-                                Cell::new(&task.id.to_string()),
-                                Cell::new(&status),
-                                Cell::new(&task.description),
-                                // Cell::new(&task.tags.join(", ")),
-                                // Cell::new(&task.date.to_string()),
-                            ]));
-                        }
-                        
-                        table.printstd();
+                        print_tasks(self.storage.tasks.iter().collect());
                     }
                 }
             }
@@ -246,32 +236,12 @@ impl TaskManager {
                 }
 
                 let task = self.storage.get_task_at(&index);
-
-                let status = match &task.status {
-                    Status::Done => "Complete".green().to_string(),
-                    Status::Todo => "Todo".red().to_string(),
-                    Status::WIP => "Working".yellow().to_string(),
-                };
-
-                let mut table = Table::new();
-                table.set_format(*format::consts::FORMAT_BOX_CHARS);
-                table.set_titles(Row::new(vec![
-                    Cell::new("Task ID"),
-                    Cell::new("Status"),
-                    Cell::new("Description"),
-                    Cell::new("Tags"),
-                    Cell::new("Written"),
-                ]));
-
-                table.add_row(Row::new(vec![
-                    Cell::new(&task.id.to_string()),
-                    Cell::new(&status),
-                    Cell::new(&task.description),
-                    Cell::new(&task.tags.join(", ")),
-                    Cell::new(&task.date.to_string()),
-                ]));
-
-                table.printstd();
+                
+                println!("{}: {}", "Task ID".green(), task.id);
+                println!("{}: {}", "Description".green(), task.description);
+                println!("{}: {}", "Date".green(), task.date);
+                println!("{}: {}", "Status".green(), task.status);
+                println!("{}: {}", "Tags".green(), task.tags.join(", "));
             }
         }
     }

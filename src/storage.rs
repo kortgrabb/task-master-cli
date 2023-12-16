@@ -77,7 +77,7 @@ impl Storage {
     }
 
     pub fn update_tasks(&mut self) {
-
+        
         // fix the ids of the tasks
         for (index, task) in self.tasks.iter_mut().enumerate() {
             task.id = index;
