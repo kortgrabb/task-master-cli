@@ -63,14 +63,17 @@ impl TaskManager {
                     return;
                 }
 
-                // if there are tags, split them into a vector
                 let mut tags = match tags {
-                    Some(tags) => tags.split(",").map(|tag| tag.trim().to_string()).collect(),
+                    Some(tags) => tags.split(",").map(|tag| tag.trim().to_string()).collect::<Vec<String>>(),
                     None => Vec::new(),
                 };
 
+                // sort and deduplicate the tags
+                tags.sort();
+                tags.dedup();
+
                 if tags.len() == 0 {
-                    tags.push("No Tags".to_string());
+                    tags.push("none".to_string());
                 }
 
                 let task = Task {
@@ -127,18 +130,34 @@ impl TaskManager {
                             .iter()
                             .filter(|task| task.description.contains(&query))
                             .collect::<Vec<&Task>>();
+
+                        let mut table = Table::new();
+                        table.set_format(*format::consts::FORMAT_BOX_CHARS);
+                        table.set_titles(Row::new(vec![
+                                Cell::new("Task ID"),
+                                Cell::new("Status"),
+                                Cell::new("Description"),
+                                // Cell::new("Tags"),
+                                // Cell::new("Written"),
+                            ]));
+
                         for task in filtered_tasks {
-                            println!("{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}\n----------------------", 
-                                "Task ID", task.id, 
-                                "Status".bright_blue(), &task.status.to_string().on_color(match &task.status {
-                                    Status::Complete => "green",
-                                    Status::Todo => "red",
-                                    Status::Working => "yellow",
-                                }).black(), 
-                                "Description".bright_blue(), &task.description,
-                                "Tags".bright_blue(), &task.tags.join(", "),
-                                "Written".bright_blue(), &task.date);
+                            let status = match &task.status {
+                                Status::Complete => "Complete".green().to_string(),
+                                Status::Todo => "Todo".red().to_string(),
+                                Status::Working => "Working".yellow().to_string(),
+                            };
+                        
+                            table.add_row(Row::new(vec![
+                                Cell::new(&task.id.to_string()),
+                                Cell::new(&status),
+                                Cell::new(&task.description),
+                                // Cell::new(&task.tags.join(", ")),
+                                // Cell::new(&task.date.to_string()),
+                            ]));
                         }
+
+                        table.printstd();
                     },
 
                     // if there is no query, print all tasks
@@ -149,8 +168,8 @@ impl TaskManager {
                             Cell::new("Task ID"),
                             Cell::new("Status"),
                             Cell::new("Description"),
-                            Cell::new("Tags"),
-                            Cell::new("Written"),
+                            // Cell::new("Tags"),
+                            // Cell::new("Written"),
                         ]));
                         
                         for task in tasks {
@@ -164,8 +183,8 @@ impl TaskManager {
                                 Cell::new(&task.id.to_string()),
                                 Cell::new(&status),
                                 Cell::new(&task.description),
-                                Cell::new(&task.tags.join(", ")),
-                                Cell::new(&task.date.to_string()),
+                                // Cell::new(&task.tags.join(", ")),
+                                // Cell::new(&task.date.to_string()),
                             ]));
                         }
                         
