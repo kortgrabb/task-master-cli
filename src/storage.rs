@@ -9,12 +9,10 @@ pub struct Storage {
     pub tasks: Vec<Task>,
 }
 
-// constant for the file path (inside data folder)
 const FILE_PATH: &str = "./tasks.json";
 
 impl Storage {
     pub fn new() -> Storage {
-        // load the tasks from the file if it exists
         let tasks = match Storage::read_from_file(Path::new(FILE_PATH)) {
             Ok(storage) => storage.tasks,
             Err(_) => Vec::new(),
@@ -24,7 +22,6 @@ impl Storage {
     }
 
     pub fn load_tasks(&mut self) {
-        // load the tasks from the file if it exists
         self.tasks = match Storage::read_from_file(Path::new(FILE_PATH)) {
             Ok(storage) => storage.tasks,
             Err(_) => Vec::new(),
@@ -109,12 +106,10 @@ impl Storage {
     }
 
     pub fn remove_task(&mut self, index: usize) {
-        // remove the task at the given index
         self.tasks.remove(index);
 
         println!("Task {} removed", index);
 
-        // write the updated tasks to the file
         self.write_to_file(Path::new(FILE_PATH))
             .expect("Error writing to file");
     }
