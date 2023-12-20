@@ -31,9 +31,8 @@ impl Storage {
         };
     }
 
-    pub fn task_exists(&self, index: &usize) -> bool {
-        // check if the task exists
-        if self.tasks.len() > *index {
+    pub fn task_exists(&self, index: usize) -> bool {
+        if self.tasks.len() > index {
             true
         } else {
             false
@@ -96,25 +95,22 @@ impl Storage {
         tasks
     }
 
-    pub fn get_task_at(&self, index: &usize) -> Task {
-        // get the task at the given index
-        let task = self.tasks[*index].clone();
-        
+    pub fn get_task_at(&self, index: usize) -> Task {
+        let task = self.tasks[index].clone();
+
         task
     }
 
     pub fn insert_task(&mut self, task: Task) {
-        // add the task to the tasks vector
         self.tasks.push(task);
 
-        // write the updated tasks to the file
         self.write_to_file(Path::new(FILE_PATH))
             .expect("Error writing to file");
     }
 
-    pub fn remove_task(&mut self, index: &usize) {
+    pub fn remove_task(&mut self, index: usize) {
         // remove the task at the given index
-        self.tasks.remove(*index);
+        self.tasks.remove(index);
 
         println!("Task {} removed", index);
 

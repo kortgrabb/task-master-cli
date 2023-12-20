@@ -131,7 +131,7 @@ impl TaskManager {
 
                     let mut num_tasks_deleted = 0;
                     for index in indices[0]..indices[1] + 1 {
-                        if self.storage.task_exists(&index) {
+                        if self.storage.task_exists(index) {
                             self.storage.tasks.retain(|task| task.id != index);
                             num_tasks_deleted += 1;
                         }
@@ -183,7 +183,7 @@ impl TaskManager {
 
             TaskAction::MarkTask(index, status) => {
                 
-                if !self.storage.task_exists(&index) {
+                if !self.storage.task_exists(index) {
                     println!("Task with ID {} does not exist", index);
                     return;
                 }
@@ -213,7 +213,7 @@ impl TaskManager {
             }
 
             TaskAction::EditTask(index, description) => {
-                if !self.storage.task_exists(&index) {
+                if !self.storage.task_exists(index) {
                     println!("Task with ID {} does not exist", index);
                     return;
                 }
@@ -231,11 +231,11 @@ impl TaskManager {
             }
 
             TaskAction::View(index) => {
-                if !self.storage.task_exists(&index) {
+                if !self.storage.task_exists(index) {
                     println!("Task with ID {} does not exist", index);
                 }
 
-                let task = self.storage.get_task_at(&index);
+                let task = self.storage.get_task_at(index);
                 
                 println!("{}: {}", "Task ID".green(), task.id);
                 println!("{}: {}", "Description".green(), task.description);
