@@ -82,10 +82,6 @@ cargo build --release
 
 This will create an executable file in the `target/debug` directory. Run the application with:
 
-```sh
-cargo run -- [arguments]
-```
-
 ## Dependencies
 
 This project uses the following dependencies:
