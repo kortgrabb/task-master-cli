@@ -99,7 +99,3 @@ Contributions are welcome. Please feel free to open an issue or submit a pull re
 ## License
 
 This project is open source and available under the MIT License.
-
----
-
-This format should be more suitable for your documentation needs.
